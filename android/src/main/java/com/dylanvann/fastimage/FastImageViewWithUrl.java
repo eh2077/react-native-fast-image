@@ -134,40 +134,6 @@ class FastImageViewWithUrl extends AppCompatImageView {
         }
 
         ThemedReactContext context = (ThemedReactContext) getContext();
-        if (imageSource != null) {
-            // This is an orphan even without a load/loadend when only loading a placeholder
-            RCTEventEmitter eventEmitter = context.getJSModule(RCTEventEmitter.class);
-            int viewId = this.getId();
-
-            // Request the URL from cache to see if it exists there and if so pass the cache
-            // path as an argument in the onLoadStart event
-            requestManager
-                    .asFile()
-                    .load(glideUrl)
-                    .onlyRetrieveFromCache(true)
-                    .listener(new RequestListener<File>() {
-                        @Override
-                        public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<File> target, boolean isFirstResource) {
-                            WritableNativeMap result = new WritableNativeMap();
-                            result.putNull("cachePath");
-                            eventEmitter.receiveEvent(viewId,
-                                    FastImageViewManager.REACT_ON_LOAD_START_EVENT,
-                                    result);
-                            return false;
-                        }
-
-                        @Override
-                        public boolean onResourceReady(File resource, Object model, Target<File> target, DataSource dataSource, boolean isFirstResource) {
-                            WritableNativeMap result = new WritableNativeMap();
-                            result.putString("cachePath", resource.getAbsolutePath());
-                            eventEmitter.receiveEvent(viewId,
-                                    FastImageViewManager.REACT_ON_LOAD_START_EVENT,
-                                    result);
-                            return false;
-                        }
-                    })
-                    .submit();
-        }
 
         if (requestManager != null) {
             RequestBuilder<Drawable> builder =
@@ -208,6 +174,14 @@ class FastImageViewWithUrl extends AppCompatImageView {
                         eventEmitter.receiveEvent(viewId,
                             "onFastImageLoad",
                             resourceData
+                        );
+                    }
+
+                    @Override
+                    public void onLoadStarted(@Nullable Drawable placeholder) {
+                        eventEmitter.receiveEvent(viewId,
+                                FastImageViewManager.REACT_ON_LOAD_START_EVENT,
+                                new WritableNativeMap()
                         );
                     }
                 });
